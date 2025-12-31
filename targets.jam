@@ -5,12 +5,6 @@
 # run `tools/bjam/gen_targets.py`
 #
 
-exe-js _dummy :
-  src/main/_dummy.o
-:
-:
-  $(EXE_DEPENDENCIES)
-;
 exe-js js_client :
   src/main/js_client.o
   crypto
@@ -182,7 +176,6 @@ test-run-js tests/system/test_ssl_sha256 :
 :
 ;
 
-obj src/main/_dummy.o : src/main/_dummy.cpp ;
 obj src/main/js_client.o : src/main/js_client.cpp ;
 obj src/main/js_player.o : src/main/js_player.cpp ;
 obj src/red_channels/clipboard.o : src/red_channels/clipboard.cpp ;
