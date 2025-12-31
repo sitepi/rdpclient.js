@@ -144,19 +144,13 @@ class RDPClient {
             }
         };
 
-        // 键盘事件处理
-        this._keyboard = {
-            handleKeyDown: (e) => {
-                if (!this._connected) return;
-                e.preventDefault();
-                // 发送键盘事件到 WASM
-                // this._client.writeScancodeEvent(scancode);
-            },
-            handleKeyUp: (e) => {
-                if (!this._connected) return;
-                e.preventDefault();
-            }
-        };
+        // 创建键盘处理器
+        if (typeof KeyboardHandler !== 'undefined') {
+            this._keyboardHandler = new KeyboardHandler(this);
+        } else {
+            console.warn('KeyboardHandler 未加载，键盘功能将不可用');
+            this._keyboardHandler = null;
+        }
 
         // 鼠标事件处理
         this._mouse = {
@@ -307,9 +301,10 @@ class RDPClient {
      * @private
      */
     _registerEventListeners() {
-        // 键盘事件
-        this.canvas.addEventListener('keydown', this._keyboard.handleKeyDown);
-        this.canvas.addEventListener('keyup', this._keyboard.handleKeyUp);
+        // 键盘事件（使用 KeyboardHandler）
+        if (this._keyboardHandler) {
+            this._keyboardHandler.attach(this.canvas);
+        }
         
         // 鼠标事件
         this.canvas.addEventListener('mousemove', this._mouse.handleMouseMove);
@@ -320,6 +315,13 @@ class RDPClient {
         // 剪贴板事件
         document.addEventListener('copy', this._clipboard.handleCopy);
         document.addEventListener('paste', this._clipboard.handlePaste);
+        
+        // 窗口失去焦点时释放所有按键
+        window.addEventListener('blur', () => {
+            if (this._keyboardHandler) {
+                this._keyboardHandler.handleBlur();
+            }
+        });
         
         // 确保 canvas 可以获得焦点
         this.canvas.tabIndex = 1;
@@ -405,12 +407,18 @@ class RDPClient {
             this._connected = false;
             this._emit('disconnected');
             this._log('连接已关闭');
+        // 移除键盘事件
+        if (this._keyboardHandler) {
+            this._keyboardHandler.detach(this.canvas);
         }
-    }
-
-    /**
-     * 取消注册事件监听器
-     * @private
+        
+        // 移除鼠标事件
+        this.canvas.removeEventListener('mousemove', this._mouse.handleMouseMove);
+        this.canvas.removeEventListener('mousedown', this._mouse.handleMouseDown);
+        this.canvas.removeEventListener('mouseup', this._mouse.handleMouseUp);
+        this.canvas.removeEventListener('wheel', this._mouse.handleWheel);
+        
+        // 移除剪贴板事件
      */
     _unregisterEventListeners() {
         this.canvas.removeEventListener('keydown', this._keyboard.handleKeyDown);
@@ -577,6 +585,45 @@ class RDPClient {
      * 获取画布尺寸
      * @returns {{width: number, height: number}}
      */
+
+    /**
+     * 获取键盘状态（调试用）
+     * @returns {Object} 键盘状态信息
+     */
+    getKeyboardState() {
+        if (this._keyboardHandler) {
+            return this._keyboardHandler.getState();
+        }
+        return null;
+    }
+
+    /**
+     * 释放所有按下的键
+     */
+    releaseAllKeys() {
+        if (this._keyboardHandler) {
+            this._keyboardHandler.releaseAllKeys();
+        }
+    }
+
+    /**
+     * 同步锁定键状态
+     * @param {Object} locks - 锁定键状态 {capsLock, numLock, scrollLock}
+     */
+    syncLockKeys(locks) {
+        if (this._keyboardHandler) {
+            if (locks.capsLock !== undefined) {
+                this._keyboardHandler.lockState.capsLock = locks.capsLock;
+            }
+            if (locks.numLock !== undefined) {
+                this._keyboardHandler.lockState.numLock = locks.numLock;
+            }
+            if (locks.scrollLock !== undefined) {
+                this._keyboardHandler.lockState.scrollLock = locks.scrollLock;
+            }
+            this._keyboardHandler.syncLocks();
+        }
+    }
     getCanvasSize() {
         return {
             width: this.canvas.width,

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>键盘处理测试 - RDP Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .test-area {
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9fafb;
+            min-height: 150px;
+            position: relative;
+            cursor: text;
+        }
+
+        .test-area:focus {
+            outline: 3px solid #667eea;
+            background: #fff;
+        }
+
+        .hint {
+            color: #9ca3af;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .key-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .key-item {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .key-item.pressed {
+            background: #667eea;
+            color: white;
+            border-color: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .key-label {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .key-code {
+            font-family: monospace;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .key-item.pressed .key-code {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .log-area {
+            background: #1f2937;
+            color: #e5e7eb;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-keydown { color: #10b981; }
+        .log-keyup { color: #f59e0b; }
+        .log-composition { color: #8b5cf6; }
+        .log-scancode { color: #60a5fa; }
+
+        .state-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .state-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .state-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .state-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .state-value.active {
+            color: #10b981;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>⌨️ 键盘处理测试</h1>
+            <p style="color: #6b7280; margin-top: 5px;">测试完整的键盘输入功能，包括扫描码映射、修饰键、锁定键和输入法支持</p>
+        </div>
+
+        <div class="card">
+            <h2>📝 键盘输入区域</h2>
+            <div class="test-area" id="testArea" tabindex="0">
+                <div class="hint">点击此处并开始输入...</div>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="clearLog()">清空日志</button>
+                <button class="btn-secondary" onclick="focusTestArea()">聚焦输入区</button>
+                <button class="btn-secondary" onclick="releaseAll()">释放所有按键</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔘 当前按下的键</h2>
+            <div id="pressedKeys" class="key-grid">
+                <div style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 20px;">
+                    没有按下的键
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 键盘状态</h2>
+            <div class="state-panel">
+                <div class="state-item">
+                    <div class="state-label">Shift</div>
+                    <div class="state-value" id="stateShift">未激活</div>
+                </div>
+                <div class="state-item">
+                    <div class="state-label">Control</div>
+                    <div class="state-value" id="stateControl">未激活</div>
+                </div>
+                <div class="state-item">
+                    <div class="state-label">Alt</div>
+                    <div class="state-value" id="stateAlt">未激活</div>
+                </div>
+                <div class="state-item">
+                    <div class="state-label">CapsLock</div>
+                    <div class="state-value" id="stateCapsLock">关闭</div>
+                </div>
+                <div class="state-item">
+                    <div class="state-label">NumLock</div>
+                    <div class="state-value" id="stateNumLock">关闭</div>
+                </div>
+                <div class="state-item">
+                    <div class="state-label">输入法</div>
+                    <div class="state-value" id="stateComposing">未激活</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 事件日志</h2>
+            <div class="log-area" id="logArea">
+                <div class="log-entry">等待键盘事件...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="keyboard-handler.js"></script>
+    <script>
+        // 创建模拟客户端
+        const mockClient = {
+            _client: {
+                writeScancodeEvent: function(scancodeWithFlags) {
+                    const scancode = scancodeWithFlags & 0xFF;
+                    const flags = scancodeWithFlags & 0xFF00;
+                    const isRelease = (flags & 0x8000) !== 0;
+                    const isExtended = (flags & 0x0100) !== 0;
+                    
+                    addLog(
+                        `扫描码: 0x${scancode.toString(16).toUpperCase().padStart(2, '0')} ${isExtended ? '(扩展)' : ''} ${isRelease ? '释放' : '按下'}`,
+                        'scancode'
+                    );
+                },
+                writeUnicodeEvent: function(unicode, flag) {
+                    const char = String.fromCharCode(unicode);
+                    const isRelease = (flag & 0x8000) !== 0;
+                    addLog(
+                        `Unicode: "${char}" (U+${unicode.toString(16).toUpperCase()}) ${isRelease ? '释放' : '按下'}`,
+                        'scancode'
+                    );
+                },
+                syncKbdLocks: function(locks) {
+                    addLog(`同步锁定键: 0x${locks.toString(16).toUpperCase()}`, 'scancode');
+                }
+            },
+            _sendOutputData: function() {
+                // 模拟发送
+            }
+        };
+
+        // 创建键盘处理器
+        const keyboard = new KeyboardHandler(mockClient);
+        const testArea = document.getElementById('testArea');
+        
+        // 附加键盘处理器
+        keyboard.attach(testArea);
+
+        // 监听键盘事件并显示
+        testArea.addEventListener('keydown', function(e) {
+            addLog(`KeyDown: ${e.key} (${e.code})`, 'keydown');
+            updateState();
+            updatePressedKeys();
+        });
+
+        testArea.addEventListener('keyup', function(e) {
+            addLog(`KeyUp: ${e.key} (${e.code})`, 'keyup');
+            updateState();
+            updatePressedKeys();
+        });
+
+        testArea.addEventListener('compositionstart', function(e) {
+            addLog('输入法组合开始', 'composition');
+            updateState();
+        });
+
+        testArea.addEventListener('compositionupdate', function(e) {
+            addLog(`输入法组合更新: "${e.data}"`, 'composition');
+        });
+
+        testArea.addEventListener('compositionend', function(e) {
+            addLog(`输入法组合结束: "${e.data}"`, 'composition');
+            updateState();
+        });
+
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // 更新状态显示
+        function updateState() {
+            const state = keyboard.getState();
+            
+            // 修饰键
+            document.getElementById('stateShift').textContent = state.modifierState.shift ? '激活' : '未激活';
+            document.getElementById('stateShift').className = state.modifierState.shift ? 'state-value active' : 'state-value';
+            
+            document.getElementById('stateControl').textContent = state.modifierState.control ? '激活' : '未激活';
+            document.getElementById('stateControl').className = state.modifierState.control ? 'state-value active' : 'state-value';
+            
+            document.getElementById('stateAlt').textContent = state.modifierState.alt ? '激活' : '未激活';
+            document.getElementById('stateAlt').className = state.modifierState.alt ? 'state-value active' : 'state-value';
+            
+            // 锁定键
+            document.getElementById('stateCapsLock').textContent = state.lockState.capsLock ? '开启' : '关闭';
+            document.getElementById('stateCapsLock').className = state.lockState.capsLock ? 'state-value active' : 'state-value';
+            
+            document.getElementById('stateNumLock').textContent = state.lockState.numLock ? '开启' : '关闭';
+            document.getElementById('stateNumLock').className = state.lockState.numLock ? 'state-value active' : 'state-value';
+            
+            // 输入法
+            document.getElementById('stateComposing').textContent = state.composing ? '激活' : '未激活';
+            document.getElementById('stateComposing').className = state.composing ? 'state-value active' : 'state-value';
+        }
+
+        // 更新按下的键显示
+        function updatePressedKeys() {
+            const state = keyboard.getState();
+            const container = document.getElementById('pressedKeys');
+            
+            if (state.pressedKeys.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 20px;">没有按下的键</div>';
+            } else {
+                container.innerHTML = '';
+                state.pressedKeys.forEach(code => {
+                    const item = document.createElement('div');
+                    item.className = 'key-item pressed';
+                    const scancode = keyboard.getScancode(code);
+                    item.innerHTML = `
+                        <div class="key-label">${code}</div>
+                        <div class="key-code">0x${(scancode || 0).toString(16).toUpperCase()}</div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+        }
+
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '<div class="log-entry">日志已清空</div>';
+        }
+
+        // 聚焦输入区
+        function focusTestArea() {
+            testArea.focus();
+            addLog('输入区已聚焦');
+        }
+
+        // 释放所有按键
+        function releaseAll() {
+            keyboard.releaseAllKeys();
+            addLog('已释放所有按键');
+            updatePressedKeys();
+        }
+
+        // 初始化
+        testArea.focus();
+        addLog('键盘处理器已初始化');
+        addLog('提示：点击输入区并按下任意键来测试');
+    </script>
+</body>
+</html>
