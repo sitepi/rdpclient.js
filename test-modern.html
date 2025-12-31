@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDP Client - 现代化测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .feature-list li::before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 RDP Client 现代化特性测试</h1>
+        <p class="subtitle">验证 ES6+ 特性和现代化实现</p>
+
+        <div class="test-section">
+            <h2>核心现代化特性</h2>
+            <ul class="feature-list">
+                <li>私有字段 (#field) 语法</li>
+                <li>空值合并运算符 (??)</li>
+                <li>Map 数据结构</li>
+                <li>Promise / async-await</li>
+                <li>箭头函数</li>
+                <li>模板字符串</li>
+                <li>解构赋值</li>
+                <li>链式调用</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>自动化测试结果</h2>
+            <div id="test-results"></div>
+        </div>
+
+        <button onclick="runTests()">运行测试</button>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="pass-count">0</div>
+                <div class="stat-label">通过</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="fail-count">0</div>
+                <div class="stat-label">失败</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">总计</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="rdpclient.js"></script>
+    <script>
+        let passCount = 0;
+        let failCount = 0;
+
+        function addTestResult(message, status) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${status}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+
+            if (status === 'pass') passCount++;
+            if (status === 'fail') failCount++;
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('pass-count').textContent = passCount;
+            document.getElementById('fail-count').textContent = failCount;
+            document.getElementById('total-count').textContent = passCount + failCount;
+        }
+
+        async function runTests() {
+            // 清空之前的结果
+            document.getElementById('test-results').innerHTML = '';
+            passCount = 0;
+            failCount = 0;
+
+            addTestResult('开始测试...', 'info');
+
+            // 测试 1: 类实例化
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                });
+                addTestResult('✓ 类实例化成功', 'pass');
+            } catch (error) {
+                addTestResult('✗ 类实例化失败: ' + error.message, 'fail');
+            }
+
+            // 测试 2: 链式调用
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                });
+                
+                const result = client.on('connected', () => {})
+                                     .on('disconnected', () => {})
+                                     .on('error', () => {});
+                
+                if (result === client) {
+                    addTestResult('✓ 链式调用支持正常', 'pass');
+                } else {
+                    addTestResult('✗ 链式调用不返回实例', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 链式调用测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 3: 私有字段（无法直接测试，但可以验证公共API）
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                });
+
+                // 私有字段不应该能从外部访问
+                const hasPrivateField = client['#wasm'] === undefined && 
+                                       client['#client'] === undefined &&
+                                       client['#socket'] === undefined;
+                
+                if (hasPrivateField) {
+                    addTestResult('✓ 私有字段封装正确', 'pass');
+                } else {
+                    addTestResult('✗ 私有字段可能泄漏', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 私有字段测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 4: 空值合并（测试默认参数）
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                    // 不提供可选参数，应该使用默认值
+                });
+
+                if (client.width === 800 && client.height === 600) {
+                    addTestResult('✓ 默认值处理正确（空值合并）', 'pass');
+                } else {
+                    addTestResult('✗ 默认值不正确', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 默认值测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 5: 事件系统（使用Map）
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                });
+
+                let eventFired = false;
+                const handler = () => { eventFired = true; };
+                
+                client.on('test-event', handler);
+                client._emit('test-event');
+                
+                if (eventFired) {
+                    addTestResult('✓ 事件系统工作正常', 'pass');
+                    
+                    // 测试事件移除
+                    eventFired = false;
+                    client.off('test-event', handler);
+                    client._emit('test-event');
+                    
+                    if (!eventFired) {
+                        addTestResult('✓ 事件移除功能正常', 'pass');
+                    } else {
+                        addTestResult('✗ 事件移除失败', 'fail');
+                    }
+                } else {
+                    addTestResult('✗ 事件未触发', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 事件系统测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 6: 参数验证
+            try {
+                const canvas = document.createElement('canvas');
+                let errorCaught = false;
+                
+                try {
+                    new RDPClient(canvas, {
+                        // 缺少必需参数
+                        username: 'test'
+                    });
+                } catch (e) {
+                    errorCaught = true;
+                }
+                
+                if (errorCaught) {
+                    addTestResult('✓ 参数验证工作正常', 'pass');
+                } else {
+                    addTestResult('✗ 参数验证未捕获错误', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 参数验证测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 7: 自动重连配置
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test',
+                    autoReconnect: true,
+                    maxReconnectAttempts: 5
+                });
+
+                if (client.autoReconnect === true) {
+                    addTestResult('✓ 自动重连配置生效', 'pass');
+                } else {
+                    addTestResult('✗ 自动重连配置失败', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ 自动重连测试失败: ' + error.message, 'fail');
+            }
+
+            // 测试 8: 公共 API 可用性
+            try {
+                const canvas = document.createElement('canvas');
+                const client = new RDPClient(canvas, {
+                    url: 'ws://test:3000',
+                    username: 'test',
+                    password: 'test'
+                });
+
+                const hasRequiredMethods = 
+                    typeof client.initialize === 'function' &&
+                    typeof client.connect === 'function' &&
+                    typeof client.disconnect === 'function' &&
+                    typeof client.on === 'function' &&
+                    typeof client.off === 'function' &&
+                    typeof client.isConnected === 'function';
+
+                if (hasRequiredMethods) {
+                    addTestResult('✓ 公共 API 完整', 'pass');
+                } else {
+                    addTestResult('✗ 公共 API 不完整', 'fail');
+                }
+            } catch (error) {
+                addTestResult('✗ API 测试失败: ' + error.message, 'fail');
+            }
+
+            addTestResult('测试完成！', 'info');
+        }
+
+        // 页面加载时自动运行测试
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

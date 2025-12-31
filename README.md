@@ -1,21 +1,192 @@
-# RDP.WASM - WebAssembly RDP Client
+# RDP Client.js - 现代化 WebAssembly RDP 客户端
 
-一个独立的基于 WebAssembly 的 RDP (远程桌面协议) 客户端，从 Redemption 项目的 jsclient 子项目中提取。
+一个独立的、现代化的基于 WebAssembly 的 RDP (远程桌面协议) 客户端库，提供清晰简洁的 JavaScript API。
 
-## 项目概述
+[![版本](https://img.shields.io/badge/版本-1.1.0-blue.svg)]()
+[![许可证](https://img.shields.io/badge/许可证-GPL--2.0+-green.svg)](LICENSE)
+[![ES6+](https://img.shields.io/badge/ES-6%2B-orange.svg)]()
 
-本项目提供了一个使用 Emscripten 编译为 WebAssembly 的浏览器 RDP 客户端。用户可以直接从 Web 浏览器连接到 RDP 服务器，无需任何插件。
+## ✨ 项目概述
 
-## 功能特性
+本项目提供了一个使用 Emscripten 编译为 WebAssembly 的现代化浏览器 RDP 客户端。用户可以直接从 Web 浏览器连接到 RDP 服务器，无需任何插件。
 
+### 🆕 v1.1.0 现代化更新
+
+- ✅ **ES6+ 特性**: 使用私有字段 (`#`)、空值合并运算符 (`??`)、Map 等现代语法
+- ✅ **链式调用**: 支持流式 API 调用
+- ✅ **自动重连**: 内置智能重连机制
+- ✅ **单文件库**: 所有功能集成在一个文件中
+- ✅ **完整键盘**: 100+ 按键支持，包括修饰键和锁定键
+- ✅ **类型安全**: 增强的参数验证和错误处理
+
+📖 查看 [现代化更新日志](MODERNIZATION.md) 了解详情
+
+## 🚀 功能特性
+
+### 核心功能
 - 🌐 基于浏览器的 RDP 客户端
-- 🚀 编译为 WebAssembly，接近原生性能
+- ⚡ WebAssembly 编译，接近原生性能
 - 🔒 支持安全的 RDP 连接
-- 📋 剪贴板支持
-- ⌨️ 完整的键盘支持，支持多种键盘布局
-- 🖱️ 鼠标和指针支持
+- 🎨 清晰简洁的 JavaScript API
 
-## 项目结构
+### 输入支持
+- ⌨️ **完整键盘支持**: 
+  - 100+ 按键映射
+  - 修饰键 (Shift, Ctrl, Alt, Meta)
+  - 锁定键 (CapsLock, NumLock, ScrollLock)
+  - 输入法编辑器 (IME) 支持
+  - Unicode 字符输入
+- 🖱️ 鼠标和指针支持
+- 📋 剪贴板支持
+
+### 开发体验
+- 💡 现代化 ES6+ 语法
+- 📝 完整的 API 文档
+- 🔄 自动重连机制
+- 🎯 事件驱动架构
+- ⛓️ 链式调用支持
+
+## 📦 快速开始
+
+### 1. 基本使用
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RDP Client</title>
+</head>
+<body>
+    <canvas id="rdp-canvas" width="800" height="600"></canvas>
+    
+    <!-- 引入单个文件 -->
+    <script src="rdpclient.js"></script>
+    <script>
+        const canvas = document.getElementById('rdp-canvas');
+        
+        // 创建客户端实例（支持链式调用）
+        const client = new RDPClient(canvas, {
+            url: 'ws://your-server:3390',
+            username: 'user',
+            password: 'pass',
+            width: 800,
+            height: 600,
+            autoReconnect: true,          // 启用自动重连
+            maxReconnectAttempts: 5       // 最多重连 5 次
+        })
+        .on('connected', () => console.log('已连接'))
+        .on('disconnected', () => console.log('已断开'))
+        .on('error', (err) => console.error('错误:', err));
+        
+        // 初始化并连接
+        async function connect() {
+            try {
+                await client.initialize('./js_client.js');
+                await client.connect();
+            } catch (error) {
+                console.error('连接失败:', error);
+            }
+        }
+        
+        connect();
+    </script>
+</body>
+</html>
+```
+
+### 2. 高级用法
+
+```javascript
+// 使用所有配置选项
+const client = new RDPClient(canvas, {
+    url: 'ws://server:3390',
+    username: 'admin',
+    password: 'secret',
+    domain: 'COMPANY',
+    width: 1920,
+    height: 1080,
+    bpp: 24,
+    keyboard: 'en',
+    autoReconnect: true,
+    maxReconnectAttempts: 3
+});
+
+// 监听所有事件
+client
+    .on('connected', () => {
+        console.log('成功连接到服务器');
+    })
+    .on('disconnected', () => {
+        console.log('与服务器断开连接');
+    })
+    .on('error', (error) => {
+        console.error('发生错误:', error);
+    })
+    .on('resize', ({ width, height }) => {
+        console.log(`屏幕大小变更: ${width}x${height}`);
+    })
+    .on('clipboard', (data) => {
+        console.log('剪贴板数据:', data);
+    })
+    .on('log', ({ level, message }) => {
+        console.log(`[${level}] ${message}`);
+    });
+
+// 初始化和连接
+await client.initialize('./js_client.js');
+await client.connect();
+
+// 程序控制
+client.isConnected();           // 检查连接状态
+client.getCanvasSize();         // 获取画布大小
+client.getKeyboardState();      // 获取键盘状态
+client.releaseAllKeys();        // 释放所有按键
+await client.disconnect();      // 断开连接
+```
+
+## 🎮 示例页面
+
+本项目包含三个示例页面：
+
+1. **example.html** - 完整的连接示例，带美观的 UI
+2. **keyboard-test.html** - 键盘功能测试页面
+3. **test-modern.html** - 现代化特性测试页面
+
+运行示例：
+```bash
+# 使用任何 HTTP 服务器
+python -m http.server 8000
+# 然后访问 http://localhost:8000/example.html
+```
+
+## 📚 API 文档
+
+查看 [LIBRARY_API.md](LIBRARY_API.md) 获取完整的 API 文档。
+
+### 主要 API
+
+#### 构造函数
+```javascript
+new RDPClient(canvas, options)
+```
+
+#### 方法
+- `async initialize(wasmPath)` - 初始化 WASM 模块
+- `async connect()` - 连接到服务器
+- `async disconnect()` - 断开连接
+- `on(event, handler)` - 注册事件监听器（支持链式调用）
+- `off(event, handler)` - 移除事件监听器（支持链式调用）
+- `isConnected()` - 检查连接状态
+
+#### 事件
+- `connected` - 连接成功
+- `disconnected` - 连接断开
+- `error` - 发生错误
+- `resize` - 屏幕大小变更
+- `clipboard` - 剪贴板数据
+- `log` - 日志消息
+
+## 🏗️ 项目结构
 
 ```
 rdp.wasm/

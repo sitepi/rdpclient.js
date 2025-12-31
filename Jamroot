@@ -254,16 +254,12 @@ constant TEST_DEPENDENCIES :
 
 obj log_test.o : $(REDEMPTION_TEST_PATH)/includes/test_only/log_as_logtest.cpp
     : <include>$(REDEMPTION_TEST_PATH)/includes ;
-obj _log_print.o : $(REDEMPTION_SRC_PATH)/utils/log_as_logprint.cpp ;
+obj _log_print.o : src/utils/logging.cpp ;
 obj _log_level.o : src/redjs/log_level.cpp ;
 alias log_print.o : _log_print.o _log_level.o ;
 
-obj app_path_test.o : src/core/app_path.cpp :
-    <define>SHARE_PATH='\"$(FIXTURES_PATH)\"'
-    <define>CFG_PATH='\"$(REDEMPTION_SYS_PATH)/etc/rdpproxy/\"'
-;
-
-alias app_path_exe.o : app_path_test.o ;
+# app_path is now inlined in header, no .cpp file needed
+alias app_path_exe.o ;
 
 
 actions gen_targets

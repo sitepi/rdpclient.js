@@ -120,3 +120,41 @@ StrReplaceBetweenPattern::StrReplaceBetweenPattern(
 }
 
 } // namespace utils
+
+
+// ============================================================================
+// Section: MultiSZ String Functions (from multisz.cpp)
+// ============================================================================
+
+#include "utils/sugar/multisz.hpp"
+#include <cassert>
+
+void SOHSeparatedStringsToMultiSZ(char * dest, size_t dest_size, const char * src)
+{
+    assert(dest_size > 1);
+
+    char const * e = dest + dest_size - 2;
+    for (; dest != e && *src; ++dest, ++src) {
+        *dest = ('\x01' == *src) ? '\0' : *src;
+    }
+    memset(dest, 0, e-dest + 2);
+}
+
+void MultiSZCopy(char * dest, size_t dest_size, const char * src)
+{
+    assert(dest_size > 1);
+
+    memset(dest, 0, dest_size);
+    size_t total_len = 0;
+    for (const char * p = src; *p; ) {
+        size_t sz_len = strlen(p);
+        if (!sz_len) {
+            break;
+        }
+        sz_len++;
+        total_len += sz_len;
+        p += sz_len;
+    }
+    total_len++;
+    memcpy(dest, src, std::min(total_len, dest_size - 2));
+}

@@ -52,4 +52,8 @@ enum class AppPath
     SessionTmpDir,
 };
 
-zstring_view app_path(AppPath) noexcept;
+// Inlined from app_path.cpp - returns empty path for Emscripten build
+inline zstring_view app_path(AppPath) noexcept
+{
+    return {};
+}

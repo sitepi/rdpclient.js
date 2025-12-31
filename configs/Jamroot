@@ -119,15 +119,9 @@ rule add_obj ( target : src : requirements * )
 add_obj error.o : $(REDEMPTION_SRC_PATH)/core/error.cpp : <define>NDEBUG ;
 add_obj cfgloader.o : $(REDEMPTION_SRC_PATH)/utils/cfgloader.cpp ;
 add_obj strutils.o : $(REDEMPTION_SRC_PATH)/utils/strutils.cpp ;
-add_obj hex2buf.o : $(REDEMPTION_SRC_PATH)/utils/hexadecimal_string_to_buffer.cpp ;
+add_obj hex_utils.o : src/utils/hex_utils.cpp ;
 add_obj fileutils.o : $(REDEMPTION_SRC_PATH)/utils/fileutils.cpp ;
-add_obj hexdump.o : $(REDEMPTION_SRC_PATH)/utils/hexdump.cpp ;
-add_obj app_path_test.o : $(REDEMPTION_TEST_PATH)/includes/test_only/app_path_test.cpp :
-    <include>$(REDEMPTION_TEST_PATH)/includes/
-    <define>REDEMPTION_DONT_USE_BOOST_TEST
-    <define>SHARE_PATH='\"\"'
-    <define>CFG_PATH='\"$(REDEMPTION_SYS_PATH)/etc/rdpproxy/\"'
-;
+# app_path is now inlined in header, no test .cpp needed
 
 add_obj config.o : redemption_src/configs/config.cpp
 :

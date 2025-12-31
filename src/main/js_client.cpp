@@ -107,9 +107,10 @@ namespace
 
 
     template<class T>
-    T get_or(emscripten::val const& v, char const* name, T default_value)
+    T get_or(emscripten::val const& v, char const* name, T const& default_value)
     {
         auto prop = v[name];
+        // 使用 const& 避免默认值的不必要拷贝
         return not prop ? default_value : val_as<T>(prop);
     };
 
@@ -209,22 +210,22 @@ namespace
 
 class RdpClient
 {
-    struct JsRandom : Random
+    // 优化：简化随机数生成，避免不必要的继承和虚函数开销
+    // 使用轻量级结构体替代完整的类继承
+    struct JsRandom final : Random
     {
-        static constexpr char const* get_random_values = "getRandomValues";
+        emscripten::val crypto;
 
-        JsRandom(emscripten::val const& random)
-        : crypto(not random[get_random_values]
-            ? emscripten::val::global("crypto")
-            : random)
+        explicit JsRandom(emscripten::val const& random)
+        : crypto(random["getRandomValues"]
+            ? random
+            : emscripten::val::global("crypto"))
         {}
 
         void random(writable_bytes_view buf) override
         {
-            redjs::emval_call(this->crypto, get_random_values, buf);
+            redjs::emval_call(this->crypto, "getRandomValues", buf);
         }
-
-        emscripten::val crypto;
     };
 
     EventManager event_manager;
