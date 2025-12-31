@@ -19,11 +19,7 @@ jobs:
     - name: 安装依赖
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential
-    
-    - name: 安装 Boost.Jam (bjam)
-      run: |
-        sudo apt-get install -y bjam
+        sudo apt-get install -y build-essential libboost-tools-dev
     
     - name: 设置 Emscripten
       uses: mymindstorm/setup-emsdk@v14
@@ -35,10 +31,16 @@ jobs:
       run: |
         emcc --version
         which emcc
+        which b2 || which bjam
     
     - name: 构建 Release 版本
       run: |
-        bjam -j$(nproc) js_client
+        # b2 是新版本的 bjam 命令
+        if command -v b2 &> /dev/null; then
+          b2 -j$(nproc) js_client
+        else
+          bjam -j$(nproc) js_client
+        fi
     
     - name: 收集构建产物
       run: |
