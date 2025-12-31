@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDP Client - 简单示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+        }
+
+        #rdpCanvas {
+            max-width: 100%;
+            max-height: 80vh;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .status-bar {
+            padding: 10px 20px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+        }
+
+        .status-indicator.connected {
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .status-indicator.connecting {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .logs {
+            padding: 15px 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #1f2937;
+            color: #e5e7eb;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+        }
+
+        .log-entry.info { color: #60a5fa; }
+        .log-entry.error { color: #f87171; }
+        .log-entry.warn { color: #fbbf24; }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ RDP 客户端</h1>
+            <p>基于 WebAssembly 的远程桌面协议客户端</p>
+        </div>
+
+        <div class="controls">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="wsUrl">WebSocket 地址</label>
+                    <input type="text" id="wsUrl" value="ws://localhost:3390" placeholder="ws://localhost:3390">
+                </div>
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" value="administrator" placeholder="用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" value="" placeholder="密码">
+                </div>
+                <div class="form-group">
+                    <label for="domain">域名（可选）</label>
+                    <input type="text" id="domain" value="" placeholder="DOMAIN">
+                </div>
+                <div class="form-group">
+                    <label for="width">宽度</label>
+                    <input type="number" id="width" value="1280" min="640" max="1920">
+                </div>
+                <div class="form-group">
+                    <label for="height">高度</label>
+                    <input type="number" id="height" value="720" min="480" max="1080">
+                </div>
+                <div class="form-group">
+                    <label for="bpp">色深</label>
+                    <select id="bpp">
+                        <option value="16">16 位</option>
+                        <option value="24" selected>24 位</option>
+                        <option value="32">32 位</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="keyboard">键盘布局</label>
+                    <select id="keyboard">
+                        <option value="en" selected>English (US)</option>
+                        <option value="zh">中文</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                        <option value="es">Español</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="connectBtn" class="btn-primary">🔌 连接</button>
+                <button id="disconnectBtn" class="btn-danger" disabled>❌ 断开</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="rdpCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="status-bar">
+            <div class="status">
+                <div id="statusIndicator" class="status-indicator"></div>
+                <span id="statusText">未连接</span>
+            </div>
+            <div>
+                <span id="resolution">800 × 600</span>
+            </div>
+        </div>
+
+        <div class="logs" id="logs">
+            <div class="log-entry info">等待连接...</div>
+        </div>
+    </div>
+
+    <!-- 引入 RDP 客户端库 -->
+    <script src="rdpclient.js"></script>
+
+    <script>
+        // 全局变量
+        let client = null;
+        const logs = document.getElementById('logs');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        // 添加日志
+        function addLog(message, level = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${level}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // 更新状态
+        function updateStatus(status, text) {
+            statusIndicator.className = `status-indicator ${status}`;
+            statusText.textContent = text;
+        }
+
+        // 连接按钮点击
+        connectBtn.addEventListener('click', async () => {
+            try {
+                // 获取配置
+                const canvas = document.getElementById('rdpCanvas');
+                const config = {
+                    canvas: canvas,
+                    url: document.getElementById('wsUrl').value,
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
+                    domain: document.getElementById('domain').value,
+                    width: parseInt(document.getElementById('width').value),
+                    height: parseInt(document.getElementById('height').value),
+                    bpp: parseInt(document.getElementById('bpp').value),
+                    keyboard: document.getElementById('keyboard').value
+                };
+
+                // 验证配置
+                if (!config.username || !config.password) {
+                    alert('请输入用户名和密码');
+                    return;
+                }
+
+                // 禁用连接按钮
+                connectBtn.disabled = true;
+                updateStatus('connecting', '正在连接...');
+                addLog('开始连接...');
+
+                // 创建客户端
+                client = new RDPClient(config);
+
+                // 注册事件监听器
+                client
+                    .on('connected', () => {
+                        updateStatus('connected', '已连接');
+                        addLog('连接成功！', 'info');
+                        connectBtn.disabled = true;
+                        disconnectBtn.disabled = false;
+                    })
+                    .on('disconnected', () => {
+                        updateStatus('', '未连接');
+                        addLog('连接已断开', 'warn');
+                        connectBtn.disabled = false;
+                        disconnectBtn.disabled = true;
+                    })
+                    .on('error', (data) => {
+                        addLog(`错误: ${data.message}`, 'error');
+                        connectBtn.disabled = false;
+                        disconnectBtn.disabled = true;
+                    })
+                    .on('resize', (data) => {
+                        document.getElementById('resolution').textContent = 
+                            `${data.width} × ${data.height}`;
+                        addLog(`分辨率变更: ${data.width}×${data.height}`);
+                    })
+                    .on('log', (data) => {
+                        addLog(data.message, data.level);
+                    });
+
+                // 初始化并连接
+                await client.initialize('./bin/emscripten-4.0.22/release/link-static/js_client.js');
+                await client.connect();
+
+            } catch (error) {
+                addLog(`连接失败: ${error.message}`, 'error');
+                updateStatus('', '连接失败');
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        });
+
+        // 断开按钮点击
+        disconnectBtn.addEventListener('click', async () => {
+            if (client) {
+                try {
+                    await client.disconnect();
+                    client = null;
+                } catch (error) {
+                    addLog(`断开连接失败: ${error.message}`, 'error');
+                }
+            }
+        });
+
+        // 页面卸载时自动断开连接
+        window.addEventListener('beforeunload', () => {
+            if (client && client.isConnected()) {
+                client.disconnect();
+            }
+        });
+
+        // 初始化日志
+        addLog('RDP 客户端已加载', 'info');
+        addLog('请配置连接参数并点击"连接"按钮', 'info');
+    </script>
+</body>
+</html>
