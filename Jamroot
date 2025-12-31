@@ -190,10 +190,12 @@ project redjs
     # <variant>release:<cxxflags>-Os
     # <variant>release:<cxxflags>-Oz
 
-    # <variant>release:<cxxflags>"-s AGGRESSIVE_VARIABLE_ELIMINATION=1"
-    # <variant>release:<linkflags>"-s EVAL_CTORS=1"
+    # 体积优化标志
+    <variant>release:<linkflags>"--strip-debug"
+    <variant>release:<cxxflags>"-s AGGRESSIVE_VARIABLE_ELIMINATION=1"
+    <variant>release:<linkflags>"-s EVAL_CTORS=1"
     # <variant>release:<cxxflags>"-s ELIMINATE_DUPLICATE_FUNCTIONS=1" # slow
-    # <variant>release:<cxxflags>"-s ASSERTIONS=0"
+    <variant>release:<cxxflags>"-s ASSERTIONS=0"
     # <variant>release:<cxxflags>"-s ALIASING_FUNCTION_POINTERS=1" #but can break code that compares function pointers across different types.
     #
     # # UNSAFE

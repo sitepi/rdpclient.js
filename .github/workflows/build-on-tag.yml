@@ -56,6 +56,18 @@ jobs:
           bjam -j$(nproc) js_client
         fi
     
+    - name: 使用 wasm-opt 进一步优化体积
+      run: |
+        # 查找生成的 wasm 文件
+        WASM_FILE=$(find . -name "js_client.wasm" | head -n 1)
+        if [ -n "$WASM_FILE" ]; then
+          echo "优化前体积: $(ls -lh "$WASM_FILE" | awk '{print $5}')"
+          # 使用 wasm-opt 进行额外优化
+          wasm-opt -Oz "$WASM_FILE" -o "${WASM_FILE}.opt"
+          mv "${WASM_FILE}.opt" "$WASM_FILE"
+          echo "优化后体积: $(ls -lh "$WASM_FILE" | awk '{print $5}')"
+        fi
+    
     - name: 收集构建产物
       run: |
         mkdir -p artifacts
