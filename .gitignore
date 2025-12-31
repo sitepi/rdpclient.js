@@ -1,32 +1,59 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Build outputs
+bin/
+build/
 *.o
+*.so
+*.a
+*.wasm
+*.js.mem
+*.wasm.map
+
+# Emscripten outputs
+*.js
+!src/application/*.js
+!tools/*.js
+*.html.mem
+*.data
+*.symbols
+
+# Boost.Jam
+Jamfile.v2~
+.jam_dependencies
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+# Node modules
+node_modules/
+package-lock.json
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# System includes (symlinks)
+system_include/
 
-# Fortran module files
-*.mod
-*.smod
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Test outputs
+test_*.out
 
-# Executables
-*.exe
-*.out
-*.app
+# Logs
+*.log
+
+# Backup files
+*_original.md
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Original redemption directory
+redemption-future/
+redemption-future.zip
+
+# Extraction script (optional, if you want to keep it out of repo)
+extract_jsclient.ps1
