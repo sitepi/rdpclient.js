@@ -54,6 +54,7 @@ exe-js js_client :
   src/utils/strutils.o
   src/utils/sugar/multisz.o
   src/utils/utf.o
+  log_print.o
 :
 :
   $(EXE_DEPENDENCIES)
