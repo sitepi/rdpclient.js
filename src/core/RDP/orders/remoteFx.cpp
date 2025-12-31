@@ -19,7 +19,7 @@
 
 */
 
-#include "remoteFx.hpp"
+#include "core/RDP/orders/remoteFx.hpp"
 #include "core/RDP/dwt.hpp"
 #include "core/RDP/orders/RDPSurfaceCommands.hpp"
 #include "utils/log.hpp"

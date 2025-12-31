@@ -193,12 +193,8 @@ template<class T> safe_int(T i) -> safe_int<T>;
 template<class T> checked_int(T i) -> checked_int<T>;
 template<class T> saturated_int(T i) -> saturated_int<T>;
 
-namespace std
-{
-    template<class T> struct underlying_type< ::safe_int<T>     > { using type = T; };
-    template<class T> struct underlying_type< ::checked_int<T>  > { using type = T; };
-    template<class T> struct underlying_type< ::saturated_int<T>> { using type = T; };
-}
+// Note: std::underlying_type specialization removed due to Clang/Emscripten restrictions
+// These types provide their own ::value_type member instead
 
 // Implementation
 
