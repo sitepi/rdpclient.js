@@ -62,12 +62,19 @@ source ./emsdk_env.sh
 
 项目使用 Boost.Jam 作为构建系统，请根据你的平台安装。
 
-### 3. 配置 Boost 头文件 (用于测试)
+### 3. 配置 Boost 头文件
 
 ```bash
+# Linux/Mac
 mkdir system_include/
 ln -s /usr/include/boost system_include/
+
+# Windows
+mkdir system_include
+# 将 Boost 安装路径的 boost 目录链接到 system_include
 ```
+
+**注意**：项目已包含所有必需的 Redemption 头文件（548 个 .hpp 文件），无需额外配置。
 
 ## 构建
 

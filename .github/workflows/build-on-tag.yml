@@ -14,12 +14,18 @@ jobs:
     - name: Checkout 代码
       uses: actions/checkout@v4
       with:
-        submodules: recursive  # 如果有子模块需要递归获取
+        submodules: recursive
     
     - name: 安装依赖
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libboost-tools-dev
+        sudo apt-get install -y build-essential libboost-tools-dev libboost-dev
+    
+    - name: 设置 Boost 头文件
+      run: |
+        mkdir -p system_include
+        ln -s /usr/include/boost system_include/boost
+        ls -la system_include/
     
     - name: 设置 Node.js
       uses: actions/setup-node@v4
